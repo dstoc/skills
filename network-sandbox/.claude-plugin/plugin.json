@@ -1,0 +1,10 @@
+{
+  "name": "dstoc-skills-network-sandbox",
+  "skills": [
+    "./command-policy-proposer",
+    "./npm-dependencies",
+    "./run-with-network",
+    "./rust-dependencies",
+    "./uv-pip-offline-download"
+  ]
+}
