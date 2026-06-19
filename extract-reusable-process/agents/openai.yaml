@@ -1,0 +1,7 @@
+interface:
+  display_name: "Extract Reusable Process"
+  short_description: "Turn a recent human-agent interaction into a portable workflow description."
+  default_prompt: "Use $extract-reusable-process to infer the reusable workflow behind the recent interaction and rewrite it as a generic skill description."
+
+policy:
+  allow_implicit_invocation: false
