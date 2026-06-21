@@ -1,6 +1,7 @@
 ---
 name: write-proposals
 description: Draft new proposal documents for a codebase in the local proposal style. Use when the user wants a new proposal written before implementation, or wants an idea turned into a structured design/proposal document with motivation, problem statement, proposal, non-goals, verification, and success criteria.
+disable-model-invocation: true
 ---
 
 # Write Proposals

@@ -1,6 +1,7 @@
 ---
 name: proposal-goal-subagents
 description: Work through a proposal by starting a tracked /goal, reading the proposal, breaking it into milestone-sized tasks, and delegating each implementation milestone to fresh subagents instead of implementing directly in the main agent. Use when the user wants proposal-driven execution with explicit progress tracking and milestone-by-milestone delegation.
+disable-model-invocation: true
 ---
 
 # Proposal Goal Subagents
