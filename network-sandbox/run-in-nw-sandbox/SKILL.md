@@ -1,6 +1,6 @@
 ---
-name: run-with-network
-description: How to use the run-with-network helper to run commands with network access  
+name: run-in-nw-sandbox
+description: How to use the run-in-nw-sandbox helper to run commands with network access  
 ---
 
 ## Core Usage Rules
@@ -14,13 +14,13 @@ description: How to use the run-with-network helper to run commands with network
 Use:
 
 ```bash
-run-with-network [--keep-env=VAR] -- <command> <args>
+run-in-nw-sandbox [--keep-env=VAR] -- <command> <args>
 ```
 
 E.g.
 
 ```bash
-run-with-network -- cargo fetch
+run-in-nw-sandbox -- cargo fetch
 ```
 
 Do not omit the `--` delimiter.

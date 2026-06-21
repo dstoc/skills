@@ -1,6 +1,6 @@
 ---
 name: uv-pip-offline-download
-description: How to use uv and Python packaging commands in this environment, including when to use run-with-network for index access and how to run offline installs from `/home/user/pip-cache` with `--no-index --find-links`.
+description: How to use uv and Python packaging commands in this environment, including when to use run-in-nw-sandbox for index access and how to run offline installs from `/home/user/pip-cache` with `--no-index --find-links`.
 ---
 
 # UV/Pip Offline Download Workflow
@@ -12,19 +12,19 @@ Use these commands to create an offline cache and install from it.
 For requirements file input:
 
 ```bash
-run-with-network -- uv run --python /usr/bin/python3 pip download -r requirements.txt -d /home/user/pip-cache
+run-in-nw-sandbox -- uv run --python /usr/bin/python3 pip download -r requirements.txt -d /home/user/pip-cache
 ```
 
 For explicit package specs:
 
 ```bash
-run-with-network -- uv run --python /usr/bin/python3 pip download pandas==2.0.3 -d /home/user/pip-cache
+run-in-nw-sandbox -- uv run --python /usr/bin/python3 pip download pandas==2.0.3 -d /home/user/pip-cache
 ```
 
 For multiple packages, place all specs before `-d`:
 
 ```bash
-run-with-network -- uv run --python /usr/bin/python3 pip download pandas==2.0.3 numpy==1.26.4 -d /home/user/pip-cache
+run-in-nw-sandbox -- uv run --python /usr/bin/python3 pip download pandas==2.0.3 numpy==1.26.4 -d /home/user/pip-cache
 ```
 
 ## Install only from local cache
@@ -65,7 +65,7 @@ Optionally test network-isolated install by repeating install commands with `--n
 
 - Pin the interpreter with `--python /usr/bin/python3` for `uv run pip download` to match command policy exactly.
 - Use `-d /home/user/pip-cache` for downloads; policy requires this cache location.
-- Use `run-with-network --` for download commands that access package indexes.
+- Use `run-in-nw-sandbox --` for download commands that access package indexes.
 - Use `uv run pip download` for downloading (download is not available via `uv pip`).
 - Keep offline installs local with `--no-index --find-links` for `uv pip install`, `uv add`, and `uv sync`, and run them without the network wrapper.
 - Prefer pinned versions for reproducible offline installs.

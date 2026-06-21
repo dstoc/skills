@@ -3,7 +3,7 @@
   "skills": [
     "./command-policy-proposer",
     "./npm-dependencies",
-    "./run-with-network",
+    "./run-in-nw-sandbox",
     "./rust-dependencies",
     "./uv-pip-offline-download"
   ]
