@@ -1,6 +1,6 @@
 ---
 name: jj-protected-workspaces
-description: Use when working on a project within /home/user/workspace/code or code-agent.
+description: Use when working with source control for a project within /home/user/workspace/code or code-agent.
 ---
 
 # Protected jj Workspaces
