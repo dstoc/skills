@@ -1,6 +1,6 @@
 ---
 name: jj-protected-workspaces
-description: Use when working with source control for a project within /home/user/workspace/code or code-agent.
+description: Use when creating commits or viewing history with source control for a project within /home/user/workspace/code or code-agent.
 ---
 
 # Protected jj Workspaces
@@ -42,11 +42,6 @@ jj abandon [<revset>...]
 ```
 
 Do not use other mutating `jj` commands.
-
-The immutable-heads configuration is the protection boundary. An agent cannot
-rewrite ancestry of `default@`, bookmarked changes, or remote-bookmarked
-changes, but non-immutable unbookmarked revisions are considered mutable
-working area and may be changed by allowed revset-based commands.
 
 ## Read-Only jj Operations
 
