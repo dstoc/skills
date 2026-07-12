@@ -24,7 +24,7 @@ Use this skill when the user wants work driven by a proposal document and explic
 
 - Keep the main agent in orchestration mode: read, plan, review, verify, and integrate.
 - Do not implement the milestone directly in the main agent when the user asked for delegated implementation.
-- Use a **fresh `claude-sonnet-4-6` or `gpt-5.4-mini` subagent** for each milestone unless the user asked for a different model.
+- Use a `claude-sonnet-4-6` or `gpt-5.6-luna` / `medium` subagent with a clean context for each milestone unless the user asked for a different model.
 - Give every worker a strict scope:
   - exact files it may edit
   - files it must not edit
