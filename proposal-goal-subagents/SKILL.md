@@ -13,7 +13,7 @@ Use this skill when the user wants work driven by a proposal document and explic
 1. Start a goal whose objective names the proposal path and the delegation constraint.
 2. Read the proposal first. Do not delegate before you understand the requested API, behavior, non-goals, and verification targets.
 3. Inspect the local codebase to map the proposal onto concrete files, current call sites, and likely tests.
-4. Convert the proposal into milestone-sized implementation steps with clear file ownership and minimal overlap.
+4. Convert the proposal into milestone-sized implementation steps with clear file ownership, minimal overlap and detailed guidance.
 5. Delegate each implementation milestone to a **fresh** subagent.
 6. Review each returned diff locally before starting the next milestone that depends on it.
 7. Run verification from the main agent after milestone work lands.
@@ -24,13 +24,17 @@ Use this skill when the user wants work driven by a proposal document and explic
 
 - Keep the main agent in orchestration mode: read, plan, review, verify, and integrate.
 - Do not implement the milestone directly in the main agent when the user asked for delegated implementation.
-- Use a `claude-sonnet-4-6` or `gpt-5.6-luna` / `medium` subagent with a clean context for each milestone unless the user asked for a different model.
+- Use a subagent with a clean context (e.g. fork_turns = none) for each milestone. Prefer the first available model from this list unless the user asked for something different:
+  - gpt-5.6-luna / max
+  - gemini-3.6-flash / medium
+  - gpt-5.6-terra / low
+  - claude-sonnet-4-6 / medium
 - Give every worker a strict scope:
   - exact files it may edit
   - files it must not edit
   - the proposal requirement it is satisfying
   - validation expectations
-- Tell workers they are not alone in the codebase and must not revert unrelated changes.
+- If relevant, tell workers they are not alone in the codebase and must not revert unrelated changes.
 - Prefer milestone boundaries such as:
   - core API/plumbing
   - host integration
