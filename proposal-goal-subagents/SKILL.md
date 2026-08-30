@@ -14,18 +14,18 @@ Use this skill when the user wants work driven by a proposal document and explic
 2. Read the proposal first. Do not delegate before you understand the requested API, behavior, non-goals, and verification targets.
 3. Inspect the local codebase to map the proposal onto concrete files, current call sites, and likely tests.
 4. Convert the proposal into milestone-sized implementation steps with clear file ownership, minimal overlap and detailed guidance.
-5. Delegate each implementation milestone to a **fresh** subagent.
+5. Delegate each substantive implementation milestone to a **fresh** subagent; handle small tasks and minor fixes directly.
 6. Review each returned diff locally before starting the next milestone that depends on it.
 7. Run verification from the main agent after milestone work lands.
-8. If verification exposes a new issue from the delegated work, create one more narrow milestone and delegate that fix to a fresh subagent.
+8. If verification exposes a substantial new issue from the delegated work, create one more narrow milestone and delegate that fix to a fresh subagent; handle small local fixes directly.
 9. Mark the goal complete only after the proposal work is done or the remaining blockers are clearly identified.
 
 ## Delegation Rules
 
 - Keep the main agent in orchestration mode: read, plan, review, verify, and integrate.
-- Do not implement the milestone directly in the main agent when the user asked for delegated implementation.
+- Delegate substantive implementation milestones to fresh subagents. The main agent may handle small tasks, minor fixes, and routine integration work directly when creating a separate milestone would add unnecessary overhead.
 - Use a subagent with a clean context (e.g. fork_turns = none) for each milestone. Prefer the first available model from this list unless the user asked for something different:
-  - gpt-5.6-luna / max
+  - gpt-5.6-luna / xhigh
   - gemini-3.6-flash / medium
   - gpt-5.6-terra / low
   - claude-sonnet-4-6 / medium
@@ -34,12 +34,15 @@ Use this skill when the user wants work driven by a proposal document and explic
   - files it must not edit
   - the proposal requirement it is satisfying
   - validation expectations
-- If relevant, tell workers they are not alone in the codebase and must not revert unrelated changes.
-- Prefer milestone boundaries such as:
-  - core API/plumbing
-  - host integration
-  - tests
-  - verification follow-up fix
+- When complete, require the worker to report:
+  - what was changed
+  - files modified
+  - validation performed and results
+  - remaining issues or uncertainties
+  - process feedback, when relevant: unclear or conflicting instructions, difficult commands or workflows, access or tooling problems, unexpected repository constraints, and suggestions for improving this skill or future delegation
+- The main agent should capture and group process feedback across milestones, then summarize recurring themes and actionable improvements for the user at the end of the goal.
+- Tell workers not to revert unrelated existing changes in the worktree.
+- Do not proactively check in on a working subagent or ask what it is doing or has done. If waiting for a subagent, wait for the maximum duration available before polling or taking any other action.
 
 ## Milestone Design
 
@@ -56,24 +59,12 @@ Bad milestones are:
 - mixed production and test rewrites without a reason
 - broad repo-wide edits with unclear ownership
 
-## Suggested Main-Agent Loop
-
-1. `create_goal`
-2. read proposal and surrounding code
-3. `update_plan` with proposal-derived milestones
-4. `spawn_agent` for milestone 1
-5. wait, review returned changes, and verify the milestone shape
-6. `spawn_agent` for the next milestone
-7. repeat until implementation is complete
-8. run final verification locally
-9. `update_goal(status=\"complete\")`
-
 ## Review Checklist
 
 After each subagent returns, confirm:
 
 - the changed files match the assigned scope
-- the implementation matches the proposal’s API and fallback semantics
+- the implementation matches the proposal’s specified requirements, behavior, and fallback or error handling, when applicable
 - no unrelated behavior was folded in
 - the next milestone assumptions are now valid
 
@@ -81,7 +72,7 @@ After each subagent returns, confirm:
 
 - Run the narrowest relevant checks first.
 - Separate new failures from pre-existing repo failures.
-- If a delegated change introduces a real bug or type error, delegate one narrow cleanup milestone instead of patching locally.
+- If a delegated change introduces a substantial bug or type error, delegate one narrow cleanup milestone; patch small, local issues directly in the main agent.
 
 ## Response Pattern
 
@@ -90,4 +81,4 @@ While using this skill:
 - tell the user you are starting a tracked goal
 - explain that you will inspect the proposal before delegating
 - provide short progress updates between milestones
-- summarize completed milestones, verification status, and remaining blockers at the end
+- summarize completed milestones, verification status, remaining blockers, and recurring process feedback with actionable improvements at the end
