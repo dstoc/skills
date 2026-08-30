@@ -1,6 +1,7 @@
 ---
 name: code-review
 disable-model-invocation: true
+description: Code and architecture review of a target or codebase
 ---
 
 # Code Review
