@@ -1,19 +1,15 @@
 ---
 name: jev-output-enquiry
-description: Use when inspecting large diffs, CI logs, search results, or failed build/test output and only a specific semantic judgment, classification, or score is needed. Prefer exit codes and deterministic parsing for exact checks.
+description: Use for narrow semantic questions about large diffs, CI logs, search results, or failed build/test output. Prefer deterministic checks for exact answers.
 ---
 
 # Jev output enquiry
 
-Use Jev to answer narrow semantic questions **without loading large raw output into context**. Do not invoke it just because a command produces output.
+Use Jev when the output is large but the question is small and specific. Check exit codes and use `jq`, `grep`, or parsers for exact answers instead.
 
-## Exact checks first
+## Failed commands
 
-Exit codes determine command success. Use `jq`, `grep`, parsers, and shell operations for exact checks. Use Jev for semantic questions that these cannot answer.
-
-## Commands that may fail
-
-For expensive commands whose failure output may need semantic triage, use the bundled `scripts/jev-run` wrapper (or `jev-run` if installed on PATH):
+Use `scripts/jev-run` (or `jev-run` on PATH) for commands with potentially large failure output:
 
 ```bash
 jev-run \
@@ -23,11 +19,13 @@ jev-run \
   -- cargo test --workspace -q
 ```
 
-The wrapper captures **stdout and stderr separately**. On success it replays both streams without calling Jev. On failure below **8 KiB combined**, it replays both streams and retains separate logs. For larger failures it sends Jev a JSON state with distinct `stdout`, `stderr`, and `exit_code` fields, returning only the compact answer and saved log paths. The original command exit code is preserved in every case. Set `JEV_MIN_BYTES=16384` to change the combined threshold, or `JEV_MIN_BYTES=0` to classify every failure. Metadata goes to stderr; raw stdout is never mixed with raw stderr in the saved files. Since output is buffered, original interleaving is not preserved. The wrapper accepts `--questions` and `--questions-file` as well as single-question flags.
+On success or failures below 8 KiB combined, the wrapper returns stdout and stderr separately without calling Jev. For larger failures, it prints the Jev answer and paths to the saved stdout/stderr logs. It always preserves the command's exit code.
+
+Set `JEV_MIN_BYTES=16384` to change the threshold, or `JEV_MIN_BYTES=0` to query every failure.
 
 ## Diffs, logs, and searches
 
-For cheap, repeatable output, query it directly **before reading it**:
+For repeatable output, pipe it to Jev before reading it:
 
 ```bash
 git diff | jev ask - \
@@ -35,52 +33,16 @@ git diff | jev ask - \
   --filter-output answers
 ```
 
-For expensive or nondeterministic output, save it once and use `jev ask ignored --state-file "$log"`. With `jev-run`, inspect the separately saved `stdout_log` and `stderr_log` paths if escalation is needed; remove the containing log directory when finished. The JSON state passed to Jev includes the exit code and both named streams. Do not use the wrapper with secret-bearing output.
+For expensive or nondeterministic output, save it once and use `jev ask ignored --state-file "$log"`.
 
-## Questions and criteria
+## Question types
 
-For one question, use `--noul 'yes/no question'`, `--noul 'which category?' --choice label ...`, or `--noul 'how much?' --score 'lowest' --score 'higher' ...`.
+- **Yes/no:** `--noul 'Does this change the public API?'`
+- **One category:** `--noul 'What failed?' --choice compilation --choice assertion --choice environment --choice other`. Include `other` if none may fit.
+- **Ordered rating:** `--noul 'How broad is the impact?' --score 'one test' --score 'one package' --score 'entire suite'`. Give concrete levels from lowest to highest.
 
-For **multiple independent questions about the same text**, use one `--questions` JSON object. Each key is the answer name; each question has a `type`, self-contained `instructions`, and `criteria` where required:
-
-```bash
-gh run view "$RUN_ID" --log-failed 2>&1 |
-  jev ask - --questions '{
-    "failure": {
-      "type": "choice",
-      "instructions": "What is the primary cause of this CI failure?",
-      "criteria": {
-        "compilation": "compiler or linker failure",
-        "assertion": "test assertion or snapshot mismatch",
-        "environment": "missing dependency, configuration, or infrastructure",
-        "other": null
-      }
-    },
-    "transient": {
-      "type": "noul",
-      "instructions": "Is there evidence this failure is transient rather than a reproducible code failure?"
-    },
-    "scope": {
-      "type": "score",
-      "instructions": "How broadly does the failure affect the test suite?",
-      "criteria": [
-        "one test or one isolated step",
-        "multiple tests in one package",
-        "multiple packages or the entire pipeline"
-      ]
-    }
-  }' --filter-output answers
-```
-
-- `noul`: yes/no probability; `criteria` optional (may describe `"true"` and `"false"`).
-- `choice`: **required object** mapping each label to a description or `null`. Include `other` when none may fit. Choose one primary alternative; use separate `noul` questions for overlapping conditions.
-- `score`: **required ordered array** of at least two concrete levels, lowest first. Do not use an object keyed by score.
-- The answer names (`failure`, `transient`, `scope`) are for matching results, **not** substitutes for complete instructions. Questions run independently in one request; they cannot refer to each other's answers. `freeform` is not supported.
-
-Use `--questions-file questions.json` instead of inline JSON if quoting becomes cumbersome. `jev-run --questions '...' -- command` also works; the wrapper queries only when the command fails.
+Add `--filter-output answers` to direct `jev ask` calls for concise output.
 
 ## Escalation
 
-Inspect saved output when an answer is uncertain or surprising, contradicts an exact check, matters enough to require verification, or identifies an issue you must fix. Read only relevant sections where possible. If Jev is unavailable, inspect saved output instead of repeatedly retrying. Never send secrets or sensitive output to Jev.
-
-**Rule:** Use Jev when the output is large, but the question is small and well-defined.
+Inspect the relevant saved output when Jev's answer is uncertain, surprising, contradicts an exact check, or identifies a problem you need to fix. If Jev is unavailable, read the logs instead of retrying. Never send secrets or sensitive output to Jev.
