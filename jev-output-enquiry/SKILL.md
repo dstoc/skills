@@ -19,9 +19,7 @@ jev-run \
   -- cargo test --workspace -q
 ```
 
-On success or failures below 8 KiB combined, the wrapper returns stdout and stderr separately without calling Jev. For larger failures, it prints the Jev answer and paths to the saved stdout/stderr logs. It always preserves the command's exit code.
-
-Set `JEV_MIN_BYTES=16384` to change the threshold, or `JEV_MIN_BYTES=0` to query every failure.
+The wrapper queries Jev only for large failures. Otherwise, it returns stdout and stderr directly. Inspect the saved logs when needed; the command's exit code is preserved.
 
 ## Diffs, logs, and searches
 
