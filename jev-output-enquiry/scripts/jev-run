@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -u
+
+if (( $# == 0 )); then
+  printf 'Usage: jev-run <jev ask options> -- <command> [args...]\n' >&2
+  exit 2
+fi
+
+jev_args=()
+while (( $# > 0 )); do
+  if [[ $1 == -- ]]; then
+    shift
+    break
+  fi
+  jev_args+=("$1")
+  shift
+done
+
+if (( ${#jev_args[@]} == 0 || $# == 0 )); then
+  printf 'Expected Jev question options and a command separated by --\n' >&2
+  exit 2
+fi
+
+min_bytes=${JEV_MIN_BYTES:-8192}
+if [[ ! $min_bytes =~ ^[0-9]+$ ]]; then
+  printf 'JEV_MIN_BYTES must be a non-negative integer (got %s)\n' "$min_bytes" >&2
+  exit 2
+fi
+
+umask 077
+log_root=${JEV_LOG_DIR:-${TMPDIR:-/tmp}/jev-run-logs}
+mkdir -p -- "$log_root" || exit 2
+run_dir=$(mktemp -d "$log_root/jev.XXXXXXXX") || exit 2
+stdout_log="$run_dir/stdout"
+stderr_log="$run_dir/stderr"
+state="$run_dir/state.json"
+trap 'rm -f -- "$state"' EXIT
+
+if "$@" >"$stdout_log" 2>"$stderr_log"; then
+  cat -- "$stdout_log"
+  cat -- "$stderr_log" >&2
+  rm -rf -- "$run_dir"
+  printf 'exit_code=0\n' >&2
+  exit 0
+else
+  rc=$?
+fi
+
+stdout_bytes=$(wc -c < "$stdout_log")
+stderr_bytes=$(wc -c < "$stderr_log")
+total_bytes=$((stdout_bytes + stderr_bytes))
+printf 'exit_code=%s\nstdout_log=%s\nstderr_log=%s\nstdout_bytes=%s\nstderr_bytes=%s\n' \
+  "$rc" "$stdout_log" "$stderr_log" "$stdout_bytes" "$stderr_bytes" >&2
+
+replay_output() {
+  cat -- "$stdout_log"
+  cat -- "$stderr_log" >&2
+}
+
+if (( total_bytes < 10#$min_bytes )); then
+  printf 'jev_skipped=short_output\n' >&2
+  replay_output
+  exit "$rc"
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'jev_skipped=jq_unavailable\n' >&2
+  replay_output
+  exit "$rc"
+fi
+
+# jev ask accepts one state input. JSON preserves stdout/stderr as distinct fields.
+if ! jq -n --rawfile stdout "$stdout_log" --rawfile stderr "$stderr_log" \
+  --argjson exit_code "$rc" \
+  '{exit_code: $exit_code, stdout: $stdout, stderr: $stderr}' >"$state"; then
+  printf 'jev_skipped=state_encoding_failed\n' >&2
+  replay_output
+  exit "$rc"
+fi
+
+if ! jev ask ignored --state-file "$state" "${jev_args[@]}" --filter-output answers; then
+  printf 'jev_error=1; inspect the saved stdout/stderr logs instead of retrying\n' >&2
+fi
+exit "$rc"
