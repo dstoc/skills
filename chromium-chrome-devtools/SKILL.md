@@ -1,17 +1,17 @@
 ---
 name: chromium-chrome-devtools
-description: Use installed Chromium and chrome-devtools to automate, inspect, and debug the creds web app against a local server during implementation, including browser compatibility experiments available to runners.
+description: Use installed Chromium and chrome-devtools for browser automation, inspection, debugging, and local web application compatibility testing.
 ---
 
 # Chromium + Chrome DevTools CLI
 
 Use the installed Chromium binary with the `chrome-devtools` CLI for browser automation, inspection, and debugging.
 
-## Creds implementation scope
+## Testing scope
 
-Implementation runners do not have access to real user devices or deployment networks. Use Chromium and a local server for the proposal's initial compatibility experiments and browser integration tests. Record what was actually exercised and any unsupported APIs or tooling limitations. Local or virtual-authenticator results do not establish real-device/passkey-provider compatibility or deployment UDP reachability. Do not block runner implementation on access to unavailable real devices; leave those checks explicitly identified for later manual verification.
+Use Chromium against the application or local test server relevant to the task. Record the browser version, what was exercised, and any unsupported APIs or tooling limitations. Local tests, mocks, and virtual authenticators do not establish compatibility with physical devices, browser providers, or deployment networks. Identify any checks that require later manual verification rather than claiming they passed.
 
-The insecure-certificate browser setting below supports the test environment; it is not a substitute for testing WebTransport certificate-hash pinning. Include explicit mismatch/negative tests and report if the browser flags prevent meaningful validation. Do not weaken production TLS/pinning behavior to make tests pass.
+The insecure-certificate browser setting below supports environments with an intercepting proxy. It is not a substitute for testing TLS or certificate-pinning requirements. Include negative tests where relevant and report when browser flags prevent meaningful validation. Never weaken production security to make tests pass.
 
 ## Installed commands
 
@@ -56,7 +56,7 @@ chrome-devtools start \
   --usageStatistics false
 ```
 
-Do not use the same profile directory for simultaneous Chromium instances. For creds, preserve the proposal's no-persistent-application-storage requirement; a test profile is not permission to store keys or application credentials.
+Do not use the same profile directory for simultaneous Chromium instances. A persistent test profile does not override the application's security or storage requirements. Use synthetic test data and keep real credentials out of test artifacts.
 
 ## Standard workflow
 
@@ -78,13 +78,13 @@ chrome-devtools evaluate_script \
   --pageId 1 --output-format json
 ```
 
-Use the local creds server as the primary test target. The supplied external smoke-test target works with the recommended configuration when reachable:
+Navigate to the local application URL supplied by the test server, for example:
 
 ```sh
-chrome-devtools navigate_page 1 --url https://tines.tbuckley.dev
+chrome-devtools navigate_page 1 --url http://localhost:8000
 ```
 
-It loads with the title `Tines — A place for work to move`. This is a navigation example, not a requirement to access an external service for local creds tests.
+Use the scheme and port appropriate to the application. Features requiring a secure context may need a locally configured HTTPS server. External navigation is not required for local tests.
 
 ## Input automation
 
@@ -100,13 +100,13 @@ chrome-devtools drag 1 <source_uid> <target_uid> --includeSnapshot true
 chrome-devtools handle_dialog 1 accept
 ```
 
-Example against the test page:
+Example interaction (illustrative UIDs):
 
 ```sh
 chrome-devtools take_snapshot 1
-# The sign-in button was uid 1_5 in the observed snapshot.
+# Suppose the current snapshot identifies a button as 1_5.
 chrome-devtools click 1 1_5 --includeSnapshot true
-# The dialog email field then appeared as uid 2_6.
+# Take a fresh snapshot and use the current field UID, for example 2_6.
 chrome-devtools fill 1 2_6 'test@example.com' --includeSnapshot true
 ```
 
@@ -139,7 +139,7 @@ For a simple HTML dump without DevTools automation:
 
 ```sh
 chromium --headless --ignore-certificate-errors \
-  --dump-dom https://tines.tbuckley.dev
+  --dump-dom http://localhost:8000
 ```
 
 Use the DevTools CLI for DOM snapshots, reliable element interaction, JavaScript evaluation, screenshots, network inspection, and console inspection.
