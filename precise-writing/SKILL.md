@@ -1,7 +1,6 @@
 ---
 name: precise-writing
-description: Write or revise clear and precise technical text with ASD-STE100 principles.
-disable-model-invocation: true
+description: Use this whenever you are writing text that will be part of an issue, journal or document.
 ---
 
 # Precise Writing
