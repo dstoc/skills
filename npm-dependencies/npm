@@ -1,0 +1,50 @@
+#!/bin/sh
+set -eu
+
+# This wrapper must appear before the real npm in PATH.
+# The network sandbox resolves "npm" itself; local calls use an absolute path
+# to avoid invoking this wrapper recursively.
+real_npm=/usr/local/bin/npm
+keep_env=NPM_CONFIG_IGNORE_SCRIPTS,NPM_CONFIG_ALLOW_GIT,NPM_CONFIG_ALLOW_REMOTE,NPM_CONFIG_ALLOW_FILE,NPM_CONFIG_ALLOW_DIRECTORY,NPM_CONFIG_MIN_RELEASE_AGE,NPM_CONFIG_STRICT_NPMRC
+
+if [ "${1-}" = install ]; then
+    # Installation must never fall back to local npm.
+    if ! command -v run-in-nw-sandbox >/dev/null 2>&1; then
+        printf '%s\n' 'npm install requires run-in-nw-sandbox, but it is unavailable.' >&2
+        exit 1
+    fi
+
+    if env \
+        NPM_CONFIG_IGNORE_SCRIPTS=true \
+        NPM_CONFIG_ALLOW_GIT=none \
+        NPM_CONFIG_ALLOW_REMOTE=none \
+        NPM_CONFIG_ALLOW_FILE=none \
+        NPM_CONFIG_ALLOW_DIRECTORY=none \
+        NPM_CONFIG_MIN_RELEASE_AGE=7 \
+        NPM_CONFIG_STRICT_NPMRC=true \
+        run-in-nw-sandbox --check "--keep-env=$keep_env" -- npm "$@" \
+        >/dev/null 2>&1; then
+        exec env \
+            NPM_CONFIG_IGNORE_SCRIPTS=true \
+            NPM_CONFIG_ALLOW_GIT=none \
+            NPM_CONFIG_ALLOW_REMOTE=none \
+            NPM_CONFIG_ALLOW_FILE=none \
+            NPM_CONFIG_ALLOW_DIRECTORY=none \
+            NPM_CONFIG_MIN_RELEASE_AGE=7 \
+            NPM_CONFIG_STRICT_NPMRC=true \
+            run-in-nw-sandbox "--keep-env=$keep_env" -- npm "$@"
+    fi
+
+    cat >&2 <<'USAGE'
+`npm install` is limited here, use one of the following formats:
+
+npm install
+npm install -- <package-spec>
+npm install --save-dev -- <package-spec>
+npm install --save -- <package-spec>
+USAGE
+    exit 1
+fi
+
+# Commands other than "install" use local npm without sandbox environment overrides.
+exec "$real_npm" "$@"

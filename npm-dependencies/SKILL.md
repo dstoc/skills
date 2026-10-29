@@ -1,47 +1,24 @@
 ---
 name: npm-dependencies
-description: Manage npm package dependencies in this environment. Use when adding or updating npm packages, editing package.json/package-lock.json, or when network access must be constrained to `run-in-nw-sandbox -- npm install --no-scripts [--save | --save-dev] -- package-spec ...` followed by `npm rebuild` outside the sandbox.
+description: Use when npm, npx, or build/test commands encounter dependency installation or network errors.
 ---
 
-# Npm Dependencies
+# npm dependencies
 
-## Overview
+Network access for npm dependency installation is available through these approved commands:
 
-Add or update npm dependencies using the approved network-safe workflow, then run install scripts locally via `npm rebuild`.
-
-## Workflow
-
-1. Decide dependency type and package specs.
-2. Run the only approved network command:
-
-```bash
-run-in-nw-sandbox -- npm install --no-scripts -- <package-spec> ...
+```sh
+npm install
+npm install -- <package-spec>
+npm install --save-dev -- <package-spec>
+npm install --save -- <package-spec>
 ```
 
-To install from `package.json` (no explicit package specs), run:
+Other commands, including `npx`, `npm exec`, and build/test scripts, may attempt to download or install packages implicitly and fail due to network restrictions.
 
-```bash
-run-in-nw-sandbox -- npm install --no-scripts
-```
+If this happens:
+1. Identify the missing dependencies.
+2. Install them explicitly using the approved commands above, one package spec at a time.
+3. Retry the original command using the installed dependencies.
 
-3. For dependencies or devDependencies, include exactly one of `--save` or `--save-dev` before the `--` delimiter:
-
-```bash
-run-in-nw-sandbox -- npm install --no-scripts --save -- <package-spec> ...
-run-in-nw-sandbox -- npm install --no-scripts --save-dev -- <package-spec> ...
-```
-
-4. After the networked install completes, run install scripts locally outside the sandbox:
-
-```bash
-npm rebuild
-```
-
-5. Continue with normal local builds/tests (no network required).
-
-## Guardrails
-
-- Always pass `--no-scripts` and the `--` delimiter.
-- Package specs must appear only after `--`.
-- If no package specs are provided, `npm install --no-scripts` is allowed without `--`.
-- Do not use other npm network commands unless the user explicitly approves a policy change.
+Do not bypass these restrictions with alternative download tools, flags, or package managers. If an explicit install is denied or fails, report the blocker.
