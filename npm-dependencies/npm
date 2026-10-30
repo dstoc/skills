@@ -8,6 +8,18 @@ real_npm=/usr/local/bin/npm
 keep_env=NPM_CONFIG_IGNORE_SCRIPTS,NPM_CONFIG_ALLOW_GIT,NPM_CONFIG_ALLOW_REMOTE,NPM_CONFIG_ALLOW_FILE,NPM_CONFIG_ALLOW_DIRECTORY,NPM_CONFIG_MIN_RELEASE_AGE,NPM_CONFIG_STRICT_NPMRC
 
 if [ "${1-}" = install ]; then
+    home_dir=$(CDPATH= cd -- "${HOME:?HOME is not set}" && pwd -P) || exit 1
+    cwd=$(pwd -P) || exit 1
+
+    case "$cwd" in
+        "$home_dir"|"${home_dir%/}"/*) ;;
+        *)
+            printf '%s\n' \
+                'npm install must run within $HOME: directories outside it are not shared with the network sandbox.' >&2
+            exit 1
+            ;;
+    esac
+
     # Installation must never fall back to local npm.
     if ! command -v run-in-nw-sandbox >/dev/null 2>&1; then
         printf '%s\n' 'npm install requires run-in-nw-sandbox, but it is unavailable.' >&2
